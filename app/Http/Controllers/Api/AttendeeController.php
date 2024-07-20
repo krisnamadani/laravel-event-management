@@ -8,12 +8,28 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AttendeeResource;
 use App\Http\Traits\CanLoadRelationships;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
-class AttendeeController extends Controller
+class AttendeeController extends Controller implements HasMiddleware
 {
     use CanLoadRelationships;
+    use AuthorizesRequests;
 
     private array $relations = ['user'];
+
+    public function __construct()
+    {
+        $this->authorizeResource(Attendee::class, 'attendee');
+    }
+
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('auth:sanctum', except: ['index', 'show'])
+        ];
+    }
     
     /**
      * Display a listing of the resource.
@@ -64,8 +80,9 @@ class AttendeeController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id, Attendee $attendee)
+    public function destroy(Event $event, Attendee $attendee)
     {
+        // $this->authorize('delete-attendee', [$event, $attendee]);
         $attendee->delete();
 
         return response(status: 204);
